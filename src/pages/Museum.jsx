@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
-import { museumMemories as fallbackMemories } from "../data/memoriesData";
 import ArchivalPhotoPlate from "../components/ArchivalPhotoPlate";
 
 export default function Museum() {
@@ -18,7 +17,7 @@ export default function Museum() {
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
         const formatted = data.map((item) => ({
           id: item.id,
           archiveCode: item.archive_code,
@@ -35,9 +34,7 @@ export default function Museum() {
           photoCaption: item.photo_caption,
           filmStock: item.film_stock,
         }));
-        setMemories([...formatted, ...fallbackMemories]);
-      } else {
-        setMemories(fallbackMemories);
+        setMemories(formatted);
       }
       setLoading(false);
     }
@@ -69,24 +66,30 @@ export default function Museum() {
         </p>
       </header>
 
-      <div className="pt-8 pb-10 flex flex-wrap gap-2">
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setSelectedCategory(cat)}
-            className={`font-ui text-[11px] uppercase tracking-[0.18em] px-4 py-2 border transition-colors ${
-              selectedCategory === cat
-                ? "border-ink bg-ink text-ivory"
-                : "border-linen text-walnut hover:border-walnut hover:text-ink"
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
+      {memories.length > 0 && (
+        <div className="pt-8 pb-10 flex flex-wrap gap-2">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`font-ui text-[11px] uppercase tracking-[0.18em] px-4 py-2 border transition-colors ${
+                selectedCategory === cat
+                  ? "border-ink bg-ink text-ivory"
+                  : "border-linen text-walnut hover:border-walnut hover:text-ink"
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      )}
 
       {loading ? (
-        <p className="font-body italic text-walnut">Memuat ruang pamer...</p>
+        <p className="pt-8 font-body italic text-walnut">Memuat ruang pamer...</p>
+      ) : filteredMemories.length === 0 ? (
+        <p className="pt-8 font-body italic text-walnut">
+          Belum ada koleksi publik di ruang pamer ini.
+        </p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
           {filteredMemories.map((item) => (

@@ -1,16 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
-import { museumMemories as fallbackMemories } from "../data/memoriesData";
 import ArchivalPhotoPlate from "../components/ArchivalPhotoPlate";
 
 export default function Home() {
-  const [featuredPlates, setFeaturedPlates] = useState(
-    fallbackMemories.slice(0, 3)
-  );
+  const [featuredPlates, setFeaturedPlates] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadFeaturedMemories() {
+      setLoading(true);
       const { data, error } = await supabase
         .from("museum_memories")
         .select("*")
@@ -18,7 +17,7 @@ export default function Home() {
         .order("created_at", { ascending: false })
         .limit(3);
 
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
         const formatted = data.map((item) => ({
           id: item.archive_code || item.id,
           title: item.title,
@@ -26,10 +25,9 @@ export default function Home() {
           location: item.location || "Arsip Pribadi",
           imageUrl: item.image_url,
         }));
-
-        const combined = [...formatted, ...fallbackMemories].slice(0, 3);
-        setFeaturedPlates(combined);
+        setFeaturedPlates(formatted);
       }
+      setLoading(false);
     }
 
     loadFeaturedMemories();
@@ -71,29 +69,37 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
-          {featuredPlates.map((item) => (
-            <Link
-              key={item.id}
-              to="/museum"
-              className="group text-left block focus:outline-none"
-            >
-              <ArchivalPhotoPlate
-                src={item.imageUrl}
-                alt={item.title}
-                caption={`Arsip No. ${item.id} — ${item.location}`}
-                aspectClass="aspect-[4/3]"
-                compact
-              />
-              <h3 className="font-heading text-xl text-ink mt-3 group-hover:text-walnut transition-colors">
-                {item.title}
-              </h3>
-              <p className="font-body italic text-xs text-walnut mt-0.5">
-                {item.date}
-              </p>
-            </Link>
-          ))}
-        </div>
+        {loading ? (
+          <p className="font-body italic text-walnut">Memuat sorotan arsip...</p>
+        ) : featuredPlates.length === 0 ? (
+          <p className="font-body italic text-walnut">
+            Belum ada foto yang disorot ke Beranda. Unggah melalui The Diary dengan opsi &ldquo;Upload Beranda (Public)&rdquo;.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
+            {featuredPlates.map((item) => (
+              <Link
+                key={item.id}
+                to="/museum"
+                className="group text-left block focus:outline-none"
+              >
+                <ArchivalPhotoPlate
+                  src={item.imageUrl}
+                  alt={item.title}
+                  caption={`Arsip No. ${item.id} — ${item.location}`}
+                  aspectClass="aspect-[4/3]"
+                  compact
+                />
+                <h3 className="font-heading text-xl text-ink mt-3 group-hover:text-walnut transition-colors">
+                  {item.title}
+                </h3>
+                <p className="font-body italic text-xs text-walnut mt-0.5">
+                  {item.date}
+                </p>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Dua Navigasi Utama */}
